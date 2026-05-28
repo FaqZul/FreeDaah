@@ -1,0 +1,211 @@
+name: FreeDaah
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  push:
+    branches: [main, ci]
+    paths:
+      - ".github/workflows/build.yml"
+      - "patch/**"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-slim
+    outputs:
+      FRIDA_VERSION: ${{ steps.pull.outputs.FRIDA_VERSION }}
+      ALREADY_RELEASE: ${{ steps.pull.outputs.ALREADY_RELEASE }}
+    steps:
+      - id: pull
+        name: Check Version
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fridaLatests = await github.rest.repos.getLatestRelease({ owner: 'frida', repo: 'frida' })
+            const fridaVersion = fridaLatests.data.tag_name
+            core.setOutput("FRIDA_VERSION", fridaVersion)
+            try {
+              const FreeDaahLatests = await github.rest.repos.getReleaseByTag({ owner: context.repo.owner, repo: context.repo.repo, tag: fridaVersion })
+              const FreeDaahVersion = fridaLatests.data.tag_name
+              if (fridaVersion == FreeDaahVersion) {
+                if (${{ ( github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}) {
+                  core.setOutput('ALREADY_RELEASE', '2')
+                } else {
+                  core.setOutput('ALREADY_RELEASE', '1')
+                }
+              } else {
+                core.setOutput('ALREADY_RELEASE', '0')
+              }
+            } catch (e) {
+              if (e.message.includes('Not Found')) {
+                core.setOutput('ALREADY_RELEASE', '0')
+              } else {
+                core.setFailed(e.message)
+              }
+            }
+  build:
+    runs-on: ubuntu-22.04
+    needs: check
+    if: needs.check.outputs.ALREADY_RELEASE != '1'
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          local-cache: false
+          link-to-sdk: true
+          ndk-version: r29
+      - name: Setup NodeJS
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.9
+      - name: Setup Environment
+        run: |
+          sudo apt-get update && sudo apt-get install -y build-essential ninja-build flex bison ruby ruby-dev xz-utils
+          sudo gem install fpm -v 1.11.0 --no-document
+          python3 -m pip install lief graphlib
+      - name: Clone FreeDaah
+        uses: actions/checkout@v6
+      # - name: Apply Patch
+      #   shell: bash
+      #   run: |
+      #     export ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}
+      #     export FRIDA_VERSION=${{ needs.check.outputs.FRIDA_VERSION }}
+
+      #     git config --global user.name "GitHub Actions"
+      #     git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #     git clone -b $FRIDA_VERSION --depth 11 --recurse-submodules --shallow-submodules https://github.com/frida/frida
+
+      #     cd frida
+      #     for path in ../patch/*
+      #     do
+      #       name=$(basename $path)
+      #       echo "Patch $name"
+      #       cd subprojects/$name
+      #       git am ../../../patch/$name/*.patch
+      #       cd ../..
+      #     done
+      #     cd ..
+      - name: Clone Frida
+        uses: actions/checkout@v6
+        with:
+          repository: frida/frida
+          ref: ${{ needs.check.outputs.FRIDA_VERSION }}
+          path: frida
+      - name: Apply Patch
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python3 frida/tools/ensure-submodules.py
+          cd frida/subprojects/frida-core
+          git am ../../../patch/frida-core/*.patch
+          cd ../frida-gum
+          git am ../../../patch/frida-gum/*.patch
+          cd ../../..
+      - name: Build android-arm
+        id: android-arm
+        continue-on-error: true
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          FRIDA_VERSION: ${{ needs.check.outputs.FRIDA_VERSION }}
+        shell: bash
+        run: |
+          mkdir build-android-arm
+          cd build-android-arm
+          echo "Configure FreeDaah $FRIDA_VERSION"
+          ../frida/configure --host=android-arm
+          echo "Build FreeDaah $FRIDA_VERSION"
+          make -j$(nproc)
+          echo "Compressing"
+          xz -c subprojects/frida-core/lib/gadget/frida-gadget.so > ../FreeDaah-gadget-$FRIDA_VERSION-android-arm.so.xz
+          xz -c subprojects/frida-core/inject/frida-inject > ../FreeDaah-inject-$FRIDA_VERSION-android-arm.xz
+          xz -c subprojects/frida-core/server/frida-server > ../FreeDaah-server-$FRIDA_VERSION-android-arm.xz
+          xz -c subprojects/frida-gum/bindings/gumjs/libfrida-gumjs-1.0.a > ../FreeDaah-gumjs-$FRIDA_VERSION-android-arm.a.xz
+          cd ..
+      - name: Build android-arm64
+        id: android-arm64
+        continue-on-error: true
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          FRIDA_VERSION: ${{ needs.check.outputs.FRIDA_VERSION }}
+        shell: bash
+        run: |
+          mkdir build-android-arm64
+          cd build-android-arm64
+          echo "Configure FreeDaah $FRIDA_VERSION"
+          ../frida/configure --host=android-arm64
+          echo "Build FreeDaah $FRIDA_VERSION"
+          make -j$(nproc)
+          echo "Compressing"
+          xz -c subprojects/frida-core/lib/gadget/frida-gadget.so > ../FreeDaah-gadget-$FRIDA_VERSION-android-arm64.so.xz
+          xz -c subprojects/frida-core/inject/frida-inject > ../FreeDaah-inject-$FRIDA_VERSION-android-arm64.xz
+          xz -c subprojects/frida-core/server/frida-server > ../FreeDaah-server-$FRIDA_VERSION-android-arm64.xz
+          xz -c subprojects/frida-gum/bindings/gumjs/libfrida-gumjs-1.0.a > ../FreeDaah-gumjs-$FRIDA_VERSION-android-arm64.a.xz
+          cd ..
+      - name: Build android-x86
+        id: android-x86
+        continue-on-error: true
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          FRIDA_VERSION: ${{ needs.check.outputs.FRIDA_VERSION }}
+        shell: bash
+        run: |
+          mkdir build-android-x86
+          cd build-android-x86
+          echo "Configure FreeDaah $FRIDA_VERSION"
+          ../frida/configure --host=android-x86
+          echo "Build FreeDaah $FRIDA_VERSION"
+          make -j$(nproc)
+          echo "Compressing"
+          xz -c subprojects/frida-core/lib/gadget/frida-gadget.so > ../FreeDaah-gadget-$FRIDA_VERSION-android-x86.so.xz
+          xz -c subprojects/frida-core/inject/frida-inject > ../FreeDaah-inject-$FRIDA_VERSION-android-x86.xz
+          xz -c subprojects/frida-core/server/frida-server > ../FreeDaah-server-$FRIDA_VERSION-android-x86.xz
+          xz -c subprojects/frida-gum/bindings/gumjs/libfrida-gumjs-1.0.a > ../FreeDaah-gumjs-$FRIDA_VERSION-android-x86.a.xz
+          cd ..
+      - name: Build android-x86_64
+        id: android-x86_64
+        continue-on-error: true
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          FRIDA_VERSION: ${{ needs.check.outputs.FRIDA_VERSION }}
+        shell: bash
+        run: |
+          mkdir build-android-x86_64
+          cd build-android-x86_64
+          echo "Configure FreeDaah $FRIDA_VERSION"
+          ../frida/configure --host=android-x86_64
+          echo "Build FreeDaah $FRIDA_VERSION"
+          make -j$(nproc)
+          echo "Compressing"
+          xz -c subprojects/frida-core/lib/gadget/frida-gadget.so > ../FreeDaah-gadget-$FRIDA_VERSION-android-x86_64.so.xz
+          xz -c subprojects/frida-core/inject/frida-inject > ../FreeDaah-inject-$FRIDA_VERSION-android-x86_64.xz
+          xz -c subprojects/frida-core/server/frida-server > ../FreeDaah-server-$FRIDA_VERSION-android-x86_64.xz
+          xz -c subprojects/frida-gum/bindings/gumjs/libfrida-gumjs-1.0.a > ../FreeDaah-gumjs-$FRIDA_VERSION-android-x86_64.a.xz
+          cd ..
+      - name: Delete Release
+        if: needs.check.outputs.ALREADY_RELEASE == '2'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete ${{ needs.check.outputs.FRIDA_VERSION }} --cleanup-tag -y
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.check.outputs.FRIDA_VERSION }}
+          name: ${{ needs.check.outputs.FRIDA_VERSION }}
+          prerelease: false
+          make_latest: true
+          fail_on_unmatched_files: false
+          files: |
+            *.xz

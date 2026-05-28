@@ -1,0 +1,34 @@
+From 808eaf0593bb4684cb8ad5cabc1fc5687333dbdb Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: frida:rpc
+
+---
+ frida/core.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/frida/core.py b/frida/core.py
+index aa09d6b..00654df 100644
+--- a/frida/core.py
++++ b/frida/core.py
+@@ -510,7 +510,7 @@ class Script:
+         return request_id
+ 
+     def _send_rpc_call(self, request_id: int, args: Any, data: Optional[bytes]) -> None:
+-        self.post(["frida:rpc", request_id, *args], data)
++        self.post(["free:daah", request_id, *args], data)
+ 
+     def _on_rpc_message(self, request_id: int, operation: str, params: List[Any], data: Optional[Any]) -> None:
+         if operation in ("ok", "error"):
+@@ -553,7 +553,7 @@ class Script:
+             level = message["level"]
+             text = payload
+             self._log_handler(level, text)
+-        elif mtype == "send" and isinstance(payload, list) and len(payload) > 0 and payload[0] == "frida:rpc":
++        elif mtype == "send" and isinstance(payload, list) and len(payload) > 0 and payload[0] == "free:daah":
+             request_id = payload[1]
+             operation = payload[2]
+             params = payload[3:]
+-- 
+2.47.3
+

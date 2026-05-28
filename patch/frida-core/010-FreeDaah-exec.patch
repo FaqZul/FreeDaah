@@ -1,0 +1,32 @@
+From 716a4e2b7255b18dc360c5042bd999cbfeb6dff9 Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: exec free-daah.py
+
+---
+ src/embed-agent.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/embed-agent.py b/src/embed-agent.py
+index cfb4a59..dd8945b 100644
+--- a/src/embed-agent.py
++++ b/src/embed-agent.py
+@@ -78,6 +78,15 @@ def main(argv):
+                 shutil.copy(agent, embedded_agent)
+             else:
+                 embedded_agent.write_bytes(b"")
++
++            import os
++            custom_script = str(output_dir) + "/../../../../frida/subprojects/frida-core/src/free-daah.py"
++            return_code = os.system("python3 " + custom_script + " " + str(priv_dir / f"frida-agent-{flavor}.so"))
++            if (return_code == 0):
++                print("FreeDaah Finished")
++            else:
++                print("FreeDaah errorCode:", return_code)
++
+             embedded_assets += [embedded_agent]
+     elif host_os in {"freebsd", "qnx"}:
+         embedded_agent = priv_dir / "frida-agent.so"
+-- 
+2.47.3
+

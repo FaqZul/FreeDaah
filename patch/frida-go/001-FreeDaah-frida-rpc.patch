@@ -1,0 +1,34 @@
+From 6d717bc1da1c9860dc6563e0ba75f3b8a827ecc8 Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: frida:rpc
+
+---
+ frida/script.go | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/frida/script.go b/frida/script.go
+index a9502ae..f908dbd 100644
+--- a/frida/script.go
++++ b/frida/script.go
+@@ -173,7 +173,7 @@ func getRPCIDFromMessage(message string) (string, any, error) {
+ }
+ 
+ func (s *Script) hijackFn(message string, data []byte) {
+-	if strings.Contains(message, "frida:rpc") {
++	if strings.Contains(message, "free:daah") {
+ 		rpcID, ret, err := getRPCIDFromMessage(message)
+ 		if err != nil {
+ 			panic(err)
+@@ -202,7 +202,7 @@ func (s *Script) hijackFn(message string, data []byte) {
+ func newRPCCall(fnName string) []any {
+ 	id := uuid.New()
+ 	dt := []any{
+-		"frida:rpc",
++		"free:daah",
+ 		id.String()[:16],
+ 		"call",
+ 		fnName,
+-- 
+2.47.3
+

@@ -1,0 +1,34 @@
+From 9bfb95711e69bd7c4cfa38acf26f95baba679b57 Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: frida:rpc
+
+---
+ src/frida_bindgen/assets/customization_helpers.ts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/frida_bindgen/assets/customization_helpers.ts b/src/frida_bindgen/assets/customization_helpers.ts
+index b2d8569..3cf3578 100644
+--- a/src/frida_bindgen/assets/customization_helpers.ts
++++ b/src/frida_bindgen/assets/customization_helpers.ts
+@@ -70,7 +70,7 @@ class ScriptServices implements RpcController {
+ 
+             this.#pendingRequests.set(id, complete);
+ 
+-            this.#script.post(["frida:rpc", id, operation, ...params], data);
++            this.#script.post(["free:daah", id, operation, ...params], data);
+             this.#script.destroyed.connect(onScriptDestroyed);
+             if (cancellable !== null) {
+                 cancellable.cancelled.connect(onOperationCancelled);
+@@ -208,7 +208,7 @@ function isRpcSendMessage(message: SendMessage): boolean {
+         return false;
+     }
+ 
+-    return payload[0] === "frida:rpc";
++    return payload[0] === "free:daah";
+ }
+ 
+ function isLogMessage(message: Message): boolean {
+-- 
+2.47.3
+

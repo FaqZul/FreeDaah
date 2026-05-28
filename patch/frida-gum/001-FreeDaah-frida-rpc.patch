@@ -1,0 +1,173 @@
+From 3523546e15d48c1de0ed380c2c552ba86eb1cfbc Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: frida:rpc
+
+---
+ bindings/gumjs/runtime/message-dispatcher.js |  8 ++--
+ bindings/gumjs/runtime/worker.js             |  4 +-
+ tests/gumjs/script.c                         | 40 ++++++++++----------
+ 3 files changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/bindings/gumjs/runtime/message-dispatcher.js b/bindings/gumjs/runtime/message-dispatcher.js
+index 50afbb7..6f9dd4b 100644
+--- a/bindings/gumjs/runtime/message-dispatcher.js
++++ b/bindings/gumjs/runtime/message-dispatcher.js
+@@ -21,7 +21,7 @@ export function MessageDispatcher() {
+ 
+   function handleMessage(rawMessage, data) {
+     const message = JSON.parse(rawMessage);
+-    if (message instanceof Array && message[0] === 'frida:rpc') {
++    if (message instanceof Array && message[0] === 'free:daah') {
+       handleRpcMessage(message[1], message[2], message.slice(3), data);
+     } else {
+       messages.push([message, data]);
+@@ -66,11 +66,11 @@ export function MessageDispatcher() {
+   function reply(id, type, result, params = []) {
+     if (Array.isArray(result) && result.length === 2 && result[1] instanceof ArrayBuffer) {
+       const [value, data] = result;
+-      send(['frida:rpc', id, type, undefined, value, ...params], data);
++      send(['free:daah', id, type, undefined, value, ...params], data);
+     } else if (result instanceof ArrayBuffer) {
+-      send(['frida:rpc', id, type, undefined, ...params], result);
++      send(['free:daah', id, type, undefined, ...params], result);
+     } else {
+-      send(['frida:rpc', id, type, result, ...params]);
++      send(['free:daah', id, type, result, ...params]);
+     }
+   }
+ 
+diff --git a/bindings/gumjs/runtime/worker.js b/bindings/gumjs/runtime/worker.js
+index 242d639..9aeff92 100644
+--- a/bindings/gumjs/runtime/worker.js
++++ b/bindings/gumjs/runtime/worker.js
+@@ -28,7 +28,7 @@ export class Worker {
+ 
+     const {payload} = message;
+ 
+-    if (Array.isArray(payload) && payload[0] === 'frida:rpc') {
++    if (Array.isArray(payload) && payload[0] === 'free:daah') {
+       const [, id, operation, ...params] = payload;
+       this._onRpcMessage(id, operation, params, data);
+       return;
+@@ -50,7 +50,7 @@ export class Worker {
+           reject(error);
+       });
+ 
+-      this.post(['frida:rpc', id, operation].concat(params));
++      this.post(['free:daah', id, operation].concat(params));
+     });
+   }
+ 
+diff --git a/tests/gumjs/script.c b/tests/gumjs/script.c
+index 9986895..b90aea8 100644
+--- a/tests/gumjs/script.c
++++ b/tests/gumjs/script.c
+@@ -6572,38 +6572,38 @@ TESTCASE (array_buffer_can_be_created)
+ TESTCASE (method_can_be_called_sync)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.add = (a, b) => a + b;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"add\",[1,2]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",3]");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"add\",[1,2]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"ok\",3]");
+ }
+ 
+ TESTCASE (method_can_be_called_async)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.add = async (a, b) => a + b;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"add\",[1,2]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",3]");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"add\",[1,2]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"ok\",3]");
+ }
+ 
+ TESTCASE (method_can_throw_sync)
+ {
+   COMPILE_AND_LOAD_SCRIPT (
+       "rpc.exports.raise = () => { throw new Error('no'); }");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"raise\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"frida:rpc\",42,\"error\",\"no\",");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"raise\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"free:daah\",42,\"error\",\"no\",");
+ }
+ 
+ TESTCASE (method_can_throw_async)
+ {
+   COMPILE_AND_LOAD_SCRIPT (
+       "rpc.exports.raise = async () => { throw new Error('no'); }");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"raise\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"frida:rpc\",42,\"error\",\"no\",");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"raise\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"free:daah\",42,\"error\",\"no\",");
+ }
+ 
+ TESTCASE (method_can_return_null)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.returnNull = () => null;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"returnNull\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",null]");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"returnNull\",[]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"ok\",null]");
+ }
+ 
+ TESTCASE (method_can_receive_binary_data)
+@@ -6618,11 +6618,11 @@ TESTCASE (method_can_receive_binary_data)
+ 
+   bytes = g_bytes_new_static (data_to_send, sizeof (data_to_send));
+   gum_script_post (fixture->script,
+-      "[\"frida:rpc\",42,\"call\",\"eat\",[\"yoghurt\"]]", bytes);
++      "[\"free:daah\",42,\"call\",\"eat\",[\"yoghurt\"]]", bytes);
+   g_bytes_unref (bytes);
+ 
+   EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("\"yoghurt\"", "13 37");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",null]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"ok\",null]");
+ }
+ 
+ TESTCASE (method_can_return_binary_data)
+@@ -6632,8 +6632,8 @@ TESTCASE (method_can_return_binary_data)
+           "const buf = Memory.allocUtf8String(\"Yo\");\n"
+           "return buf.readByteArray(2);\n"
+       "};\n");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"read\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("[\"frida:rpc\",42,\"ok\",null]",
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"read\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("[\"free:daah\",42,\"ok\",null]",
+       "59 6f");
+ }
+ 
+@@ -6644,24 +6644,24 @@ TESTCASE (method_can_return_value_and_binary_data)
+           "const buf = Memory.allocUtf8String(\"Yo\");"
+           "return [{meta: 'data'}, buf.readByteArray(2)];"
+       "};");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"read\",[]]");
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"read\",[]]");
+   EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA (
+-      "[\"frida:rpc\",42,\"ok\",null,{\"meta\":\"data\"}]",
++      "[\"free:daah\",42,\"ok\",null,{\"meta\":\"data\"}]",
+       "59 6f");
+ }
+ 
+ TESTCASE (method_list_can_be_queried)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports = { a() {}, b() {}, c() {} };");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"list\"]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",[\"a\",\"b\",\"c\"]]");
++  POST_MESSAGE ("[\"free:daah\",42,\"list\"]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"ok\",[\"a\",\"b\",\"c\"]]");
+ }
+ 
+ TESTCASE (calling_inexistent_method_should_throw_error)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"banana\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"error\","
++  POST_MESSAGE ("[\"free:daah\",42,\"call\",\"banana\",[]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"free:daah\",42,\"error\","
+       "\"unable to find method 'banana'\"]");
+ }
+ 
+-- 
+2.47.3
+

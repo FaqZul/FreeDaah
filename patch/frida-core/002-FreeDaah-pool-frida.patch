@@ -1,0 +1,25 @@
+From 210b0a35e76b5ce6448fff1bea558e1a9fd5c535 Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: pool frida
+
+---
+ src/frida-glue.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/frida-glue.c b/src/frida-glue.c
+index 6154034..9ad11dc 100644
+--- a/src/frida-glue.c
++++ b/src/frida-glue.c
+@@ -56,6 +56,8 @@ frida_init_with_runtime (FridaRuntime rt)
+     g_io_module_openssl_register ();
+ #endif
+ 
++    g_set_prgname ("freedaah");
++
+     if (runtime == FRIDA_RUNTIME_OTHER)
+     {
+       main_context = g_main_context_ref (g_main_context_default ());
+-- 
+2.47.3
+

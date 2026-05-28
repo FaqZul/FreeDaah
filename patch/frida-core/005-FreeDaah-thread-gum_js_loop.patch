@@ -1,0 +1,25 @@
+From d5f6270030690cac080d412be3b95cf35aaf298d Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: Thread gum_js_loop
+
+---
+ src/free-daah.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/free-daah.py b/src/free-daah.py
+index 70d9261..3ce35a3 100644
+--- a/src/free-daah.py
++++ b/src/free-daah.py
+@@ -24,3 +24,8 @@ if __name__ == "__main__":
+             symbol.name = symbol.name.replace("FRIDA", random_name)
+ 
+     binary.write(input_file)
++
++    # gum-js-loop thread
++    random_name = "".join(random.sample("abcdefghijklmn", 11))
++    print(f"[*] Patch `gum-js-loop` to `{random_name}`")
++    os.system(f"sed -b -i s/gum-js-loop/{random_name}/g {input_file}")
+-- 
+2.47.3
+

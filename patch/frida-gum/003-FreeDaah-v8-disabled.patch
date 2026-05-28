@@ -1,0 +1,25 @@
+From 8cb9b37c90d84fc037207474659de0dfb7bdce80 Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: V8 Disabled
+
+---
+ meson.options | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.options b/meson.options
+index c4478cb..4f5aca3 100644
+--- a/meson.options
++++ b/meson.options
+@@ -55,7 +55,7 @@ option('quickjs',
+ 
+ option('v8',
+   type: 'feature',
+-  value: 'auto',
++  value: 'disabled',
+   description: 'Build JavaScript bindings with V8 runtime included'
+ )
+ 
+-- 
+2.47.3
+

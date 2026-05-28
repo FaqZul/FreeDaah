@@ -1,0 +1,92 @@
+From 1b9c835d7ac538a7d2af8aa851ebed4bbf25c8ff Mon Sep 17 00:00:00 2001
+From: FaqZul <faqzul.developer@gmail.com>
+Date: Tue, 20 May 2025 17:08:45 +0700
+Subject: [PATCH] FreeDaah: frida:rpc
+
+---
+ lib/base/rpc.vala                                 | 6 +++---
+ src/barebone/script-runtime/message-dispatcher.ts | 6 +++---
+ tests/test-agent.vala                             | 4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/lib/base/rpc.vala b/lib/base/rpc.vala
+index c465452..63b9690 100644
+--- a/lib/base/rpc.vala
++++ b/lib/base/rpc.vala
+@@ -17,7 +17,7 @@ namespace Frida {
+ 			var request = new Json.Builder ();
+ 			request
+ 				.begin_array ()
+-				.add_string_value ("frida:rpc")
++				.add_string_value ("free:daah")
+ 				.add_string_value (request_id)
+ 				.add_string_value ("call")
+ 				.add_string_value (method)
+@@ -70,7 +70,7 @@ namespace Frida {
+ 		}
+ 
+ 		public bool try_handle_message (string json) {
+-			if (json.index_of ("\"frida:rpc\"") == -1)
++			if (json.index_of ("\"free:daah\"") == -1)
+ 				return false;
+ 
+ 			var parser = new Json.Parser ();
+@@ -99,7 +99,7 @@ namespace Frida {
+ 				return false;
+ 
+ 			string? type = rpc_message.get_element (0).get_string ();
+-			if (type == null || type != "frida:rpc")
++			if (type == null || type != "free:daah")
+ 				return false;
+ 
+ 			var request_id_value = rpc_message.get_element (1);
+diff --git a/src/barebone/script-runtime/message-dispatcher.ts b/src/barebone/script-runtime/message-dispatcher.ts
+index 13b3ba1..41a9e32 100644
+--- a/src/barebone/script-runtime/message-dispatcher.ts
++++ b/src/barebone/script-runtime/message-dispatcher.ts
+@@ -3,7 +3,7 @@ export class MessageDispatcher {
+     #operations = new Map<string, MessageHandler[]>();
+ 
+     dispatch(message: any, data: ArrayBuffer | null) {
+-        if (message instanceof Array && message[0] === "frida:rpc") {
++        if (message instanceof Array && message[0] === "free:daah") {
+             this.#handleRpcMessage(message[1], message[2], message.slice(3));
+         } else {
+             this.#messages.push([message, data]);
+@@ -63,9 +63,9 @@ export class MessageDispatcher {
+ 
+     #reply(id: number, type: RpcMessageType, result: any, params: any[] = []) {
+         if (result instanceof ArrayBuffer)
+-            send(["frida:rpc", id, type, {}].concat(params), result);
++            send(["free:daah", id, type, {}].concat(params), result);
+         else
+-            send(["frida:rpc", id, type, result].concat(params));
++            send(["free:daah", id, type, result].concat(params));
+     }
+ 
+     #dispatchMessages() {
+diff --git a/tests/test-agent.vala b/tests/test-agent.vala
+index b5fdbe3..42226ec 100644
+--- a/tests/test-agent.vala
++++ b/tests/test-agent.vala
+@@ -219,7 +219,7 @@ Interceptor.attach(Process.getModuleByName('/usr/lib/system/libsystem_kernel.dyl
+ 
+ 					var request = new Json.Builder ()
+ 						.begin_array ()
+-						.add_string_value ("frida:rpc")
++						.add_string_value ("free:daah")
+ 						.add_int_value (id)
+ 						.add_string_value ("call")
+ 						.add_string_value ("prepareForLaunch")
+@@ -250,7 +250,7 @@ Interceptor.attach(Process.getModuleByName('/usr/lib/system/libsystem_kernel.dyl
+ 						}
+ 
+ 						reader.read_element (0);
+-						assert_true (reader.get_string_value () == "frida:rpc");
++						assert_true (reader.get_string_value () == "free:daah");
+ 						reader.end_element ();
+ 
+ 						reader.read_element (1);
+-- 
+2.47.3
+
