@@ -1,6 +1,6 @@
-From 1b9c835d7ac538a7d2af8aa851ebed4bbf25c8ff Mon Sep 17 00:00:00 2001
+From 68fea3b0b214360e5664bcdbd587720cc404db61 Mon Sep 17 00:00:00 2001
 From: FaqZul <faqzul.developer@gmail.com>
-Date: Tue, 20 May 2025 17:08:45 +0700
+Date: Wed, 17 Jun 2026 00:00:00 +0700
 Subject: [PATCH] FreeDaah: frida:rpc
 
 ---
@@ -10,10 +10,10 @@ Subject: [PATCH] FreeDaah: frida:rpc
  3 files changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/lib/base/rpc.vala b/lib/base/rpc.vala
-index c465452..63b9690 100644
+index 97edecf..e0224f9 100644
 --- a/lib/base/rpc.vala
 +++ b/lib/base/rpc.vala
-@@ -17,7 +17,7 @@ namespace Frida {
+@@ -36,7 +36,7 @@ namespace Frida {
  			var request = new Json.Builder ();
  			request
  				.begin_array ()
@@ -22,16 +22,16 @@ index c465452..63b9690 100644
  				.add_string_value (request_id)
  				.add_string_value ("call")
  				.add_string_value (method)
-@@ -70,7 +70,7 @@ namespace Frida {
- 		}
- 
+@@ -96,7 +96,7 @@ namespace Frida {
+ 		 * @return true if the message was an RPC message and was handled
+ 		 */
  		public bool try_handle_message (string json) {
 -			if (json.index_of ("\"frida:rpc\"") == -1)
 +			if (json.index_of ("\"free:daah\"") == -1)
  				return false;
  
  			var parser = new Json.Parser ();
-@@ -99,7 +99,7 @@ namespace Frida {
+@@ -125,7 +125,7 @@ namespace Frida {
  				return false;
  
  			string? type = rpc_message.get_element (0).get_string ();
